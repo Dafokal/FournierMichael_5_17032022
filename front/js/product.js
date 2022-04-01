@@ -1,9 +1,9 @@
 
 // Lance une requête HTTP et retourne une promesse munie des données parsées récupérées
-function httpRequest(method, id) {
+function httpRequest(method, route) {
     return new Promise ((resolve, reject) => {
         var request = new XMLHttpRequest();
-        request.open(method, "http://localhost:3000/api/products/" + id);
+        request.open(method, "http://localhost:3000/api/products/" + route);
         request.onload = function() {
             if (this.status == 200){    // Si la requête à fonctionnée
                 var response = JSON.parse(this.responseText);
@@ -20,8 +20,8 @@ function httpRequest(method, id) {
 // Retourne le produit demandé
 async function getProduct(productId) {
     let method = "GET",
-        id = productId;
-    let object =  await httpRequest(method, id);
+        route = productId;
+    let object =  await httpRequest(method, route);
     return object;
 }
 
@@ -57,7 +57,7 @@ function productCreator (object) {
 
     pageTitle.textContent = object.name;
 
-    setAttributes(image, {"src": object.imageUrl, "alt": "Photographie "+object.name});
+    setAttributes(image, {"src": object.imageUrl, "alt": object.altTxt});
     imgContainer[0].appendChild(image);
 
     titleContainer.textContent = object.name;
