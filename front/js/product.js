@@ -5,7 +5,7 @@ function httpRequest(method, route) {
         var request = new XMLHttpRequest();
         request.open(method, "http://localhost:3000/api/products/" + route);
         request.onload = function() {
-            if (this.status == 200){    // Si la requête à fonctionnée
+            if (this.status === 200){    // Si la requête à fonctionnée
                 var response = JSON.parse(this.responseText);
                 resolve(response);
             } else {                    // Si la requête à échouée
@@ -47,12 +47,12 @@ function setAttributes(element, attributes) {
 
 // Créé le contenu de la page produit
 function productCreator (object) {
-    let pageTitle = document.querySelector("title");
+    let pageTitle = document.querySelector("title"),
         imgContainer = document.getElementsByClassName("item__img"),
         titleContainer = getElement("title"),
         priceContainer = getElement("price"),
         descriptionContainer = getElement("description"),
-        optionsContainer = getElement("colors")
+        optionsContainer = getElement("colors"),
         image = document.createElement("img");
 
     pageTitle.textContent = object.name;
@@ -76,7 +76,7 @@ function productCreator (object) {
 // Récupère ou initialise la liste de produits du panier
 function getCartList() {
     let list = localStorage.cartList;
-    if (list == undefined) {
+    if (list === undefined) {
         list = [];
     }
     else {
@@ -90,7 +90,7 @@ function addProduct(productId) {
     let colorSelected = getElement("colors").value,
         quantitySelected = parseInt(getElement("quantity").value);
     
-    if (colorSelected == "") {
+    if (colorSelected === "") {
         alert("Veuillez choisir une couleur");
     }
     else if (quantitySelected <= 0 || quantitySelected > 100) {
@@ -98,24 +98,24 @@ function addProduct(productId) {
     }
     else {
         let productSelected = {
-            id : productId,
-            color : colorSelected,
-            quantity : quantitySelected
-        },
+                id : productId,
+                color : colorSelected,
+                quantity : quantitySelected
+            },
             cartList = getCartList(),
             productAdded = false;
         
         for (cartProduct of cartList) {
-            if (productSelected.id == cartProduct.id && productSelected.color == cartProduct.color) {
+            if (productSelected.id === cartProduct.id && productSelected.color === cartProduct.color) {
                 cartProduct.quantity += productSelected.quantity;
                 productAdded = true;
             }
         }
-        if (productAdded == false) {
+        if (productAdded === false) {
             cartList.push(productSelected);
         }
         localStorage.cartList = JSON.stringify(cartList);
-        quantitySelected == 1 ? alert("Le produit a été ajouté au panier") : alert("Les produits ont été ajoutés au panier");
+        quantitySelected === 1 ? alert("Le produit a été ajouté au panier") : alert("Les produits ont été ajoutés au panier");
     }
 }
 

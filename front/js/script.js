@@ -5,7 +5,7 @@ function httpRequest(method, route) {
         var request = new XMLHttpRequest();
         request.open(method, "http://localhost:3000/api/products/" + route);
         request.onload = function() {
-            if (this.status == 200){    // Si la requête à fonctionnée
+            if (this.status === 200){    // Si la requête à fonctionnée
                 var response = JSON.parse(this.responseText);
                 resolve(response);
             } else {                    // Si la requête à échouée

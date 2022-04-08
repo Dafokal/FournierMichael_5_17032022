@@ -4,7 +4,7 @@ function httpRequest(method, route) {
         var request = new XMLHttpRequest();
         request.open(method, "http://localhost:3000/api/products/" + route);
         request.onload = function() {
-            if (this.status == 200){    // Si la requête à fonctionnée
+            if (this.status === 200){    // Si la requête à fonctionnée
                 var response = JSON.parse(this.responseText);
                 resolve(response);
             } else {                    // Si la requête à échouée
@@ -35,7 +35,7 @@ async function postOrder(order) {
 // Récupère ou initialise la liste de produits du panier
 function getCartList() {
     let list = localStorage.cartList;
-    if (list == undefined) {
+    if (list === undefined) {
         list = [];
     }
     else {
@@ -54,7 +54,7 @@ function setAttributes(element, attributes) {
 // Créé le contenu initial de la page panier à partir du localStorage
 async function cartCreator (cartList) {
 
-    if (cartList.length != 0)  {
+    if (cartList.length !== 0)  {
         for(let cartProduct of cartList) {
             let section = document.getElementById("cart__items"),
                 product = await getProduct(cartProduct.id),
@@ -101,7 +101,7 @@ async function totalDisplay (cartList) {
             price: 0
         };
     
-    if (cartList.length == 0)  {
+    if (cartList.length === 0)  {
         let message = document.createElement("h2"),
             section = document.getElementById("cart__items");
 
@@ -132,7 +132,7 @@ function modifyQuantity (event, cartList, newQuantity) {
     }
     else {
         for (let cartProduct of cartList) {
-            if (id == cartProduct.id && color == cartProduct.color) {
+            if (id === cartProduct.id && color === cartProduct.color) {
                 cartProduct.quantity = parseInt(newQuantity);
                 localStorage.cartList = JSON.stringify(cartList);
             }
@@ -149,7 +149,7 @@ function deleteItem (event, cartList) {
     
     article.remove();
     for (let cartIndex in cartList) {
-        if (id == cartList[cartIndex].id && color == cartList[cartIndex].color) {
+        if (id === cartList[cartIndex].id && color === cartList[cartIndex].color) {
             cartList.splice(cartIndex, 1);
             localStorage.cartList = JSON.stringify(cartList);
         }
@@ -158,18 +158,47 @@ function deleteItem (event, cartList) {
 }
 
 function submitOrder(event, cartList) {
+    event.preventDefault();
     let orderTab = [];
     for (let cartProduct of cartList) {
         orderTab.push(cartProduct.id);
-        
     }
+
+    let contact= {
+        firstName: document.getElementById("firstName").value,
+        lastName: document.getElementById("lastName").value,
+        address: document.getElementById("address").value,
+        city: document.getElementById("city").value,
+        email: document.getElementById("email").value
+    };
+
+    let nameTest = /[^\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
+        cityTest = /[^ '\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
+        addressTest = /^([\D])|([^ '\wàâäàéèêëùûüôòöîìïÿç-])/,
+        emailTest = /(@)(.+)$/
+
+    if (nameTest.test(contact.firstName) || contact.firstName === "") {
+        document.getElementById("firstNameErrorMsg").textContent = "Veuillez entrer un prénom valide";
+    };
+    if (nameTest.test(contact.lastName) || contact.lastName === "") {
+        document.getElementById("lastNameErrorMsg").textContent = "Veuillez entrer un nom valide";
+    };
+    if (addressTest.test(contact.address) || contact.address === "") {
+        document.getElementById("addressErrorMsg").textContent = "Veuillez entrer une addresse valide";
+    };
+    if (cityTest.test(contact.city) || contact.city === "") {
+        document.getElementById("cityErrorMsg").textContent = "Veuillez entrer un nom de ville valide";
+    };
+    if (emailTest.test(contact.email) === false || contact.email === "") {
+        document.getElementById("emailErrorMsg").textContent = "Veuillez entrer une adresse mail valide";
+    };
+    
 }
 
 // Fonction principale
 async function main () {
     let cartList = getCartList(),
-        cartItems = document.getElementsByClassName("cart__item"),
-        submit = document.getElementById("order");
+        cartItems = document.getElementsByClassName("cart__item");
 
     await cartCreator(cartList);
     totalDisplay(cartList);
@@ -183,7 +212,7 @@ async function main () {
         });
     }
 
-    submit.addEventListener("click", function(event) {
+    document.getElementById("order").addEventListener("click", function(event) {
         submitOrder(event, cartList);
     });
 }
