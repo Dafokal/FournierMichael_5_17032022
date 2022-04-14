@@ -1,10 +1,13 @@
 
-function httpRequest(method, route) {
+function httpRequest(method, route, data) {
     return new Promise ((resolve, reject) => {
         var request = new XMLHttpRequest();
         request.open(method, "http://localhost:3000/api/products/" + route);
+        if (method === "POST") {
+            request.setRequestHeader("Content-Type","application/json");
+        }
         request.onload = function() {
-            if (this.status === 200){    // Si la requête à fonctionnée
+            if (this.status === 200 || this.status === 201){    // Si la requête à fonctionnée
                 var response = JSON.parse(this.responseText);
                 resolve(response);
             } else {                    // Si la requête à échouée
@@ -12,34 +15,58 @@ function httpRequest(method, route) {
                 reject(response);
             }
         };
-        request.send();
+        request.send(data);
     })
 }
 
 // Retourne le produit demandé
 async function getProduct(productId) {
     let method = "GET",
-        route = productId;
-    let object =  await httpRequest(method, route);
+        route = productId,
+        data = ""
+    let object =  await httpRequest(method, route, data);
     return object;
 }
 
 // Envoie la commande
 async function postOrder(order) {
     let method = "POST",
-        route = order;
-    let object =  await httpRequest(method, route);
+        route = "order",
+        data = order;
+    let object =  await httpRequest(method, route, data);
     return object;
 }
 
+// Vérifie la validité de la liste de produits récupérée, réinitialise et recharge la page en cas d'erreur
+async function testCartList(list) {
+    try{
+        list = JSON.parse(list);
+        for (let product of list) {
+            if (product.id === "") {
+                throw "Empty ID";
+            }
+            let testId = await getProduct(product.id).catch(function(){
+                throw "ID not found";
+            })
+        }
+    }
+    catch (error) {
+        alert("Données du panier invalides.\n"+error);
+        localStorage.removeItem("cartList");
+        window.location.reload();
+        return;
+    }
+    return list;
+}
+
 // Récupère ou initialise la liste de produits du panier
-function getCartList() {
+async function getCartList() {
     let list = localStorage.cartList;
     if (list === undefined) {
         list = [];
     }
     else {
-        list = JSON.parse(list);
+        list = await testCartList(list);
     }
     return list;
 }
@@ -157,47 +184,92 @@ function deleteItem (event, cartList) {
     totalDisplay(cartList);
 }
 
-function submitOrder(event, cartList) {
-    event.preventDefault();
-    let orderTab = [];
-    for (let cartProduct of cartList) {
-        orderTab.push(cartProduct.id);
-    }
-
-    let contact= {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        address: document.getElementById("address").value,
-        city: document.getElementById("city").value,
-        email: document.getElementById("email").value
-    };
-
+function testForm(form) {
     let nameTest = /[^\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
         cityTest = /[^ '\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
         addressTest = /^([\D])|([^ '\wàâäàéèêëùûüôòöîìïÿç-])/,
-        emailTest = /(@)(.+)$/
+        emailTest = /(@)(.+)$/,
+        trigger = false;
 
-    if (nameTest.test(contact.firstName) || contact.firstName === "") {
-        document.getElementById("firstNameErrorMsg").textContent = "Veuillez entrer un prénom valide";
-    };
-    if (nameTest.test(contact.lastName) || contact.lastName === "") {
-        document.getElementById("lastNameErrorMsg").textContent = "Veuillez entrer un nom valide";
-    };
-    if (addressTest.test(contact.address) || contact.address === "") {
-        document.getElementById("addressErrorMsg").textContent = "Veuillez entrer une addresse valide";
-    };
-    if (cityTest.test(contact.city) || contact.city === "") {
-        document.getElementById("cityErrorMsg").textContent = "Veuillez entrer un nom de ville valide";
-    };
-    if (emailTest.test(contact.email) === false || contact.email === "") {
-        document.getElementById("emailErrorMsg").textContent = "Veuillez entrer une adresse mail valide";
-    };
+    const firstNameErrorMsg = document.getElementById("firstNameErrorMsg"),
+        lastNameErrorMsg = document.getElementById("lastNameErrorMsg"),
+        addressErrorMsg = document.getElementById("addressErrorMsg"),
+        cityErrorMsg = document.getElementById("cityErrorMsg"),
+        emailErrorMsg = document.getElementById("emailErrorMsg");
+    
+    firstNameErrorMsg.textContent = "";
+    lastNameErrorMsg.textContent = "";
+    addressErrorMsg.textContent = "";
+    cityErrorMsg.textContent = "";
+    emailErrorMsg.textContent = "";
+
+    if (nameTest.test(form.firstName) || form.firstName === "") {
+        firstNameErrorMsg.textContent = "Veuillez entrer un prénom valide";
+        trigger = true;
+    }
+    if (nameTest.test(form.lastName) || form.lastName === "") {
+        lastNameErrorMsg.textContent = "Veuillez entrer un nom valide";
+        trigger = true;
+    }
+    if (addressTest.test(form.address) || form.address === "") {
+        addressErrorMsg.textContent = "Veuillez entrer une addresse valide";
+        trigger = true;
+    }
+    if (cityTest.test(form.city) || form.city === "") {
+        cityErrorMsg.textContent = "Veuillez entrer un nom de ville valide";
+        trigger = true;
+    }
+    if (emailTest.test(form.email) === false || form.email === "") {
+        emailErrorMsg.textContent = "Veuillez entrer une adresse mail valide";
+        trigger = true;
+    }
+
+    if (trigger === false) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+async function submitOrder(event) {
+    event.preventDefault();
+
+    let cartList = await getCartList(),
+        form= {
+            firstName: document.getElementById("firstName").value,
+            lastName: document.getElementById("lastName").value,
+            address: document.getElementById("address").value,
+            city: document.getElementById("city").value,
+            email: document.getElementById("email").value
+        };
+
+    if (testForm(form) === true) {
+        let orderTab = [];
+        for (let cartProduct of cartList) {
+            orderTab.push(cartProduct.id);
+        }
+
+        if (orderTab.length > 0) {
+            let order = {
+                contact: form,
+                products: orderTab
+                },
+                postData = await postOrder(JSON.stringify(order)),
+                orderId = postData.orderId;
+            
+            window.location = "/front/html/confirmation.html?orderId=" + orderId;
+        }
+        else {
+            alert("Votre panier est vide.");
+        }
+    }
     
 }
 
 // Fonction principale
 async function main () {
-    let cartList = getCartList(),
+    let cartList = await getCartList(),
         cartItems = document.getElementsByClassName("cart__item");
 
     await cartCreator(cartList);
@@ -213,7 +285,7 @@ async function main () {
     }
 
     document.getElementById("order").addEventListener("click", function(event) {
-        submitOrder(event, cartList);
+        submitOrder(event);
     });
 }
 
