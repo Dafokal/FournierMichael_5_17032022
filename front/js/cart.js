@@ -1,4 +1,5 @@
 
+// Lance une requête HTTP et retourne une promesse munie des données parsées récupérées
 function httpRequest(method, route, data) {
     return new Promise ((resolve, reject) => {
         var request = new XMLHttpRequest();
@@ -10,7 +11,7 @@ function httpRequest(method, route, data) {
             if (this.status === 200 || this.status === 201){    // Si la requête à fonctionnée
                 var response = JSON.parse(this.responseText);
                 resolve(response);
-            } else {                    // Si la requête à échouée
+            } else {                                            // Si la requête à échouée
                 var response = console.log("HTTPRequest responded with "+this.status);
                 reject(response);
             }
@@ -37,8 +38,8 @@ async function postOrder(order) {
     return object;
 }
 
-// Vérifie la validité de la liste de produits récupérée, réinitialise et recharge la page en cas d'erreur
-async function testCartList(list) {
+// Vérifie la validité de la liste de produits récupérée, la réinitialise et recharge la page en cas d'erreur
+async function checkCartList(list) {
     try{
         list = JSON.parse(list);
         for (let product of list) {
@@ -66,9 +67,14 @@ async function getCartList() {
         list = [];
     }
     else {
-        list = await testCartList(list);
+        list = await checkCartList(list);
     }
     return list;
+}
+
+// Permet de récupérer un élément du DOM avec son id sans devoir taper "document.getElementById"
+function getElement (element) {
+    return document.getElementById(element);
 }
 
 // Permet d'attribuer plusieurs attributs à la fois
@@ -83,7 +89,7 @@ async function cartCreator (cartList) {
 
     if (cartList.length !== 0)  {
         for(let cartProduct of cartList) {
-            let section = document.getElementById("cart__items"),
+            let section = getElement("cart__items"),
                 product = await getProduct(cartProduct.id),
                 article = document.createElement("article");
 
@@ -121,8 +127,8 @@ async function cartCreator (cartList) {
 
 // Affiche la quantité et le prix total du panier, indique si le panier est vide
 async function totalDisplay (cartList) {
-    let totalQuantityContainer = document.getElementById("totalQuantity"),
-        totalPriceContainer = document.getElementById("totalPrice"),
+    let totalQuantityContainer = getElement("totalQuantity"),
+        totalPriceContainer = getElement("totalPrice"),
         total = {
             quantity: 0,
             price: 0
@@ -130,7 +136,7 @@ async function totalDisplay (cartList) {
     
     if (cartList.length === 0)  {
         let message = document.createElement("h2"),
-            section = document.getElementById("cart__items");
+            section = getElement("cart__items");
 
         message.textContent = "Votre panier est vide";
         section.appendChild(message);
@@ -155,7 +161,7 @@ function modifyQuantity (event, cartList, newQuantity) {
         color = event.target.closest("article").dataset.color;
 
     if (newQuantity <= 0 || newQuantity > 100) {
-        alert("Veuillez choisir un nombre d'article(s) entre 1 et 100");
+        alert("Veuillez choisir un nombre d'article entre 1 et 100");
     }
     else {
         for (let cartProduct of cartList) {
@@ -184,44 +190,45 @@ function deleteItem (event, cartList) {
     totalDisplay(cartList);
 }
 
-function testForm(form) {
-    let nameTest = /[^\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
-        cityTest = /[^ '\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
-        addressTest = /^([\D])|([^ '\wàâäàéèêëùûüôòöîìïÿç-])/,
-        emailTest = /(@)(.+)$/,
+// Vérifie la saisie du formulaire avec des Regex
+function checkForm(form) {
+    let checkTab = [
+            {
+                value : form.firstName,
+                regex : /[^\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
+                errorContainer : getElement("firstNameErrorMsg"),
+                errorText : "Veuillez entrer un prénom valide"
+            },{
+                value : form.lastName,
+                regex : /[^\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
+                errorContainer : getElement("lastNameErrorMsg"),
+                errorText : "Veuillez entrer un nom valide"
+            },{
+                value : form.address,
+                regex : /^([\D])|([^ '\wàâäàéèêëùûüôòöîìïÿç-])/,
+                errorContainer : getElement("addressErrorMsg"),
+                errorText : "Veuillez entrer une addresse valide"
+            },{
+                value : form.city,
+                regex : /[^ '\wàâäàéèêëùûüôòöîìïÿç-]|[\d]/,
+                errorContainer : getElement("cityErrorMsg"),
+                errorText : "Veuillez entrer un nom de ville valide"
+            },{
+                value : form.email,
+                regex : /(@)(.+)$/,
+                errorContainer : getElement("emailErrorMsg"),
+                errorText : "Veuillez entrer une adresse mail valide"
+            }
+        ],
         trigger = false;
 
-    const firstNameErrorMsg = document.getElementById("firstNameErrorMsg"),
-        lastNameErrorMsg = document.getElementById("lastNameErrorMsg"),
-        addressErrorMsg = document.getElementById("addressErrorMsg"),
-        cityErrorMsg = document.getElementById("cityErrorMsg"),
-        emailErrorMsg = document.getElementById("emailErrorMsg");
-    
-    firstNameErrorMsg.textContent = "";
-    lastNameErrorMsg.textContent = "";
-    addressErrorMsg.textContent = "";
-    cityErrorMsg.textContent = "";
-    emailErrorMsg.textContent = "";
-
-    if (nameTest.test(form.firstName) || form.firstName === "") {
-        firstNameErrorMsg.textContent = "Veuillez entrer un prénom valide";
-        trigger = true;
-    }
-    if (nameTest.test(form.lastName) || form.lastName === "") {
-        lastNameErrorMsg.textContent = "Veuillez entrer un nom valide";
-        trigger = true;
-    }
-    if (addressTest.test(form.address) || form.address === "") {
-        addressErrorMsg.textContent = "Veuillez entrer une addresse valide";
-        trigger = true;
-    }
-    if (cityTest.test(form.city) || form.city === "") {
-        cityErrorMsg.textContent = "Veuillez entrer un nom de ville valide";
-        trigger = true;
-    }
-    if (emailTest.test(form.email) === false || form.email === "") {
-        emailErrorMsg.textContent = "Veuillez entrer une adresse mail valide";
-        trigger = true;
+    for (let field of checkTab) {
+        let validator = field.value === form.email? false : true;
+        field.errorContainer.textContent = "";
+        if (field.regex.test(field.value) === validator || field.value === "") {
+            field.errorContainer.textContent = field.errorText;
+            trigger = true;
+        }
     }
 
     if (trigger === false) {
@@ -232,19 +239,20 @@ function testForm(form) {
     }
 }
 
+// Regroupe les éléments à envoyer à l'API pour passer commande à partir d'un événement
 async function submitOrder(event) {
     event.preventDefault();
 
     let cartList = await getCartList(),
         form= {
-            firstName: document.getElementById("firstName").value,
-            lastName: document.getElementById("lastName").value,
-            address: document.getElementById("address").value,
-            city: document.getElementById("city").value,
-            email: document.getElementById("email").value
+            firstName: getElement("firstName").value,
+            lastName: getElement("lastName").value,
+            address: getElement("address").value,
+            city: getElement("city").value,
+            email: getElement("email").value
         };
 
-    if (testForm(form) === true) {
+    if (checkForm(form) === true) {
         let orderTab = [];
         for (let cartProduct of cartList) {
             orderTab.push(cartProduct.id);
@@ -258,6 +266,7 @@ async function submitOrder(event) {
                 postData = await postOrder(JSON.stringify(order)),
                 orderId = postData.orderId;
             
+            localStorage.removeItem("cartList");
             window.location = "/front/html/confirmation.html?orderId=" + orderId;
         }
         else {
@@ -284,7 +293,7 @@ async function main () {
         });
     }
 
-    document.getElementById("order").addEventListener("click", function(event) {
+    getElement("order").addEventListener("click", function(event) {
         submitOrder(event);
     });
 }

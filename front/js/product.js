@@ -73,20 +73,42 @@ function productCreator (object) {
     }
 }
 
+// Vérifie la validité de la liste de produits récupérée, la réinitialise et recharge la page en cas d'erreur
+async function checkCartList(list) {
+    try{
+        list = JSON.parse(list);
+        for (let product of list) {
+            if (product.id === "") {
+                throw "Empty ID";
+            }
+            let testId = await getProduct(product.id).catch(function(){
+                throw "ID not found";
+            })
+        }
+    }
+    catch (error) {
+        alert("Données du panier invalides.\n"+error);
+        localStorage.removeItem("cartList");
+        window.location.reload();
+        return;
+    }
+    return list;
+}
+
 // Récupère ou initialise la liste de produits du panier
-function getCartList() {
+async function getCartList() {
     let list = localStorage.cartList;
     if (list === undefined) {
         list = [];
     }
     else {
-        list = JSON.parse(list);
+        list = await checkCartList(list);
     }
     return list;
 }
 
 // Vérifie la sélection de l'utilisateur et ajoute le(s) produit(s) choisi(s) dans la liste du panier
-function addProduct(productId) {
+async function addProduct(productId) {
     let colorSelected = getElement("colors").value,
         quantitySelected = parseInt(getElement("quantity").value);
     
@@ -94,7 +116,7 @@ function addProduct(productId) {
         alert("Veuillez choisir une couleur");
     }
     else if (quantitySelected <= 0 || quantitySelected > 100) {
-        alert("Veuillez choisir un nombre d'article(s) entre 1 et 100");
+        alert("Veuillez choisir un nombre d'article entre 1 et 100");
     }
     else {
         let productSelected = {
@@ -102,13 +124,20 @@ function addProduct(productId) {
                 color : colorSelected,
                 quantity : quantitySelected
             },
-            cartList = getCartList(),
+            cartList = await getCartList(),
             productAdded = false;
         
         for (cartProduct of cartList) {
             if (productSelected.id === cartProduct.id && productSelected.color === cartProduct.color) {
-                cartProduct.quantity += productSelected.quantity;
-                productAdded = true;
+                if (cartProduct.quantity + productSelected.quantity > 100) {
+                    alert("Le nombre d'article total pour un produit doit être compris entre 1 et 100.\
+                        \nVous avez déjà "+cartProduct.quantity+" articles correspondant au modèle et à la couleur choisie dans votre panier.");
+                    return;
+                }
+                else {
+                    cartProduct.quantity += productSelected.quantity;
+                    productAdded = true;
+                }
             }
         }
         if (productAdded === false) {
