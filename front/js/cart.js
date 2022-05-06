@@ -278,11 +278,12 @@ async function submitOrder(event) {
 
 // Fonction principale
 async function main () {
-    let cartList = await getCartList(),
-        cartItems = document.getElementsByClassName("cart__item");
+    let cartList = await getCartList();
 
     await cartCreator(cartList);
     totalDisplay(cartList);
+    
+    let cartItems = document.getElementsByClassName("cart__item");
 
     for (let item of cartItems) {
         item.getElementsByClassName("itemQuantity")[0].addEventListener("change", function(event) {
