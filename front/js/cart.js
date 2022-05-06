@@ -205,7 +205,7 @@ function checkForm(form) {
                 errorText : "Veuillez entrer un nom valide"
             },{
                 value : form.address,
-                regex : /^([\D])|([^ '\wàâäàéèêëùûüôòöîìïÿç-])/,
+                regex : /^([\D])|([^ '\wàâäàéèêëùûüôòöîìïÿç,-])/,
                 errorContainer : getElement("addressErrorMsg"),
                 errorText : "Veuillez entrer une addresse valide"
             },{
